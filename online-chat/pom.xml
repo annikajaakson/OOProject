@@ -31,7 +31,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.4</version>
                 <configuration>
-                    <mainClass>oop2020.App</mainClass>
+                    <mainClass>oop2020.ChatClient</mainClass>
                 </configuration>
             </plugin>
         </plugins>
