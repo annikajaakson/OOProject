@@ -1,5 +1,7 @@
 package components.chat;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.List;
 
 public class User {
@@ -7,6 +9,8 @@ public class User {
     private String username;
     private String password;
     private String email;
+
+    @JsonIgnore
     private List<Conversation> conversations;
 
     public int getId() {

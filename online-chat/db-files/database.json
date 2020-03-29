@@ -1,0 +1,28 @@
+{
+  "users" : [ {
+    "id" : 1,
+    "username" : "Peeter Paan",
+    "password" : "tinkerbell",
+    "email" : "pets@hotmail.com"
+  }, {
+    "id" : 2,
+    "username" : "Tinky Winky",
+    "password" : "tipsy",
+    "email" : "winky@gmail.com"
+  }, {
+    "id" : 3,
+    "username" : "La La",
+    "password" : "sefiir",
+    "email" : "iimeil@gmail.com"
+  }, {
+    "id" : 4,
+    "username" : "Aadam",
+    "password" : "eeva",
+    "email" : "aadam@gmail.com"
+  }, {
+    "id" : 5,
+    "username" : "Eeva",
+    "password" : "aadam",
+    "email" : "eeva@hotmail.com"
+  } ]
+}

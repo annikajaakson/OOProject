@@ -20,15 +20,20 @@ class socketThread implements Runnable {
     private final Socket socket;
     private DataInputStream in;
     private DataOutputStream out;
+    private Path DBPath;
     private Database database;
     private ObjectMapper mapper;
 
-    public socketThread(Socket socket, DataInputStream in, DataOutputStream out, Database database, ObjectMapper mapper) {
+    public socketThread(Socket socket, DataInputStream in, DataOutputStream out, Path DBPath) {
         this.socket = socket;
         this.in = in;
         this.out = out;
-        this.database = database;
-        this.mapper = mapper;
+        this.DBPath = DBPath;
+        this.mapper = new ObjectMapper();
+    }
+
+    public Database fetchDatabase () throws IOException {
+        return mapper.readValue(new File(DBPath.toString()), Database.class);
     }
 
     public List<String> readData(String user) throws IOException {
@@ -98,6 +103,9 @@ class socketThread implements Runnable {
 
                         User connectedUser = null;
 
+                        // Refresh database
+                        database = fetchDatabase();
+
                         for (User user : database.getUsers()) {
                             // If user exists, check password
                             if (user.getUsername().equals(username)) {
@@ -131,6 +139,9 @@ class socketThread implements Runnable {
                         String username = in.readUTF();
                         System.out.println("Register request with username " + username);
 
+                        // Refresh database
+                        database = fetchDatabase();
+
                         // Check if username is taken
                         boolean userNameTaken = false;
                         for (User user : database.getUsers()) {
@@ -153,7 +164,7 @@ class socketThread implements Runnable {
 
                             // Add user to database
                             database.getUsers().add(newUser);
-                            mapper.writerWithDefaultPrettyPrinter().writeValueAsString(database);
+                            mapper.writerWithDefaultPrettyPrinter().writeValue(new File(DBPath.toString()), database);
 
                             out.writeInt(0);
                             out.writeUTF("New user registered");
@@ -177,10 +188,10 @@ class socketThread implements Runnable {
 }
 
 public class Server {
-    private static String databasePath = "/database.json";
+    private static String databasePath = "online-chat/db-files/database.json";
 
     public static void main(String[] args) throws IOException, URISyntaxException {
-        Path DBPath = Paths.get(Server.class.getResource(databasePath).toURI());
+        Path DBPath = Paths.get(databasePath);
 
         ObjectMapper mapper = new ObjectMapper();
         Database database = mapper.readValue(new File(DBPath.toString()), Database.class);
@@ -194,7 +205,7 @@ public class Server {
                     DataInputStream in = new DataInputStream(socket.getInputStream());
                     DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 
-                    Thread thread = new Thread(new socketThread(socket, in, out, database, mapper));
+                    Thread thread = new Thread(new socketThread(socket, in, out, DBPath));
                     thread.start();
                 } catch (IOException e) {
                     throw new RuntimeException(e);

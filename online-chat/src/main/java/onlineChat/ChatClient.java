@@ -3,8 +3,6 @@ package onlineChat;
 import components.request.LoginRequest;
 import components.request.RegisterRequest;
 import components.request.Request;
-import components.request.LoginRequest;
-import components.request.RegisterRequest;
 import javafx.application.Application;
 import javafx.geometry.HPos;
 import javafx.geometry.Orientation;
