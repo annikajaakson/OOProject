@@ -1,4 +1,4 @@
-package oop2020;
+package onlineChat;
 
 public class SystemInfo {
     public static String javaVersion() {

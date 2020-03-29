@@ -1,5 +1,10 @@
-package oop2020;
+package onlineChat;
 
+import components.request.LoginRequest;
+import components.request.RegisterRequest;
+import components.request.Request;
+import components.request.LoginRequest;
+import components.request.RegisterRequest;
 import javafx.application.Application;
 import javafx.geometry.HPos;
 import javafx.geometry.Orientation;
@@ -10,6 +15,10 @@ import javafx.scene.layout.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,11 +26,53 @@ import java.util.List;
  * JavaFX App
  */
 public class ChatClient extends Application {
+    private String ipAddress = "localhost";
+    private int port = 1337;
+
     private List<String> conversations = new ArrayList<>();
 
     private final int WINDOW_WIDTH = 800;
     private final int WINDOW_HEIGHT = 600;
     private Scene logInScene, registerScene, chatScene;
+
+    public boolean sendRequest(Request request) {
+        try (Socket socket = new Socket(ipAddress, port);
+             DataInputStream in = new DataInputStream(socket.getInputStream());
+             DataOutputStream out = new DataOutputStream(socket.getOutputStream())) {
+
+            System.out.println("connected to chat server");
+
+            switch (request.getRequestType()) {
+                case GETDATA:
+                    break;
+                case LOGIN:
+                    out.writeInt(1);
+                    out.writeUTF(((LoginRequest) request).getUsername());
+                    out.writeUTF(((LoginRequest) request).getPassword());
+                    break;
+                case REGISTER:
+                    out.writeInt(2);
+                    out.writeUTF(((RegisterRequest) request).getUsername());
+                    out.writeUTF(((RegisterRequest) request).getPassword());
+                    out.writeUTF(((RegisterRequest) request).getEmail());
+                    break;
+            }
+
+            int requestStatus = in.readInt();
+            if (requestStatus == 0) {
+                System.out.println("Request completed successfully");
+                System.out.println(in.readUTF());
+                return true;
+            } else {
+                System.out.println("There was an error while completing the request: ");
+                System.out.println(in.readUTF());
+                return false;
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public Scene createLogInScene (Stage primaryStage) {
         // All elements are stored in a FlowPane
@@ -46,9 +97,16 @@ public class ChatClient extends Application {
 
         // Go to chat area when log in button is pressed
         logInButton.setOnAction(event -> {
-            primaryStage.setScene(this.chatScene);
-            usernameField.setText("");
-            pwdField.setText("");
+            if (!usernameField.getText().equals("") && !pwdField.getText().equals("")) {
+                boolean reqStatus = sendRequest(new LoginRequest(usernameField.getText(), pwdField.getText()));
+
+                // If login was successful, go to next scene
+                if (reqStatus) {
+                    primaryStage.setScene(this.chatScene);
+                    usernameField.setText("");
+                    pwdField.setText("");
+                }
+            }
         });
         // Go to register window when register link clicked
         registerLink.setOnAction(event -> primaryStage.setScene(this.registerScene));
@@ -94,11 +152,21 @@ public class ChatClient extends Application {
 
         // Go to log in screen on register button press
         regButton.setOnAction(event -> {
-            primaryStage.setScene(this.logInScene);
-            usernameField.setText("");
-            pwdField.setText("");
-            repPwdField.setText("");
-            emailField.setText("");
+            if (!usernameField.getText().equals("")
+                    && !pwdField.getText().equals("")
+                    && pwdField.getText().equals(repPwdField.getText())
+                    && !emailField.getText().equals("")) {
+                boolean reqStatus = sendRequest(new RegisterRequest(usernameField.getText(), pwdField.getText(), emailField.getText()));
+
+                // If register request was successful
+                if (reqStatus) {
+                    primaryStage.setScene(this.logInScene);
+                    usernameField.setText("");
+                    pwdField.setText("");
+                    repPwdField.setText("");
+                    emailField.setText("");
+                }
+            }
         });
 
         container.getChildren().addAll(

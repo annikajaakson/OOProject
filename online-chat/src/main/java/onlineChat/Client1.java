@@ -1,4 +1,4 @@
-package oop2020;
+package onlineChat;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
