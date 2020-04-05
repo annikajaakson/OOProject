@@ -188,7 +188,7 @@ class socketThread implements Runnable {
 }
 
 public class Server {
-    private static String databasePath = "online-chat/db-files/database.json";
+    private static String databasePath = "db-files/database.json";
 
     public static void main(String[] args) throws IOException, URISyntaxException {
         Path DBPath = Paths.get(databasePath);
