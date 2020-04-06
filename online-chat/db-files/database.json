@@ -3,26 +3,86 @@
     "id" : 1,
     "username" : "Peeter Paan",
     "password" : "tinkerbell",
-    "email" : "pets@hotmail.com"
+    "email" : "pets@hotmail.com",
+    "contacts" : [ 2, 6 ]
   }, {
     "id" : 2,
     "username" : "Tinky Winky",
     "password" : "tipsy",
-    "email" : "winky@gmail.com"
+    "email" : "winky@gmail.com",
+    "contacts" : [ ]
   }, {
     "id" : 3,
     "username" : "La La",
     "password" : "sefiir",
-    "email" : "iimeil@gmail.com"
+    "email" : "iimeil@gmail.com",
+    "contacts" : [ ]
   }, {
     "id" : 4,
     "username" : "Aadam",
     "password" : "eeva",
-    "email" : "aadam@gmail.com"
+    "email" : "aadam@gmail.com",
+    "contacts" : [ ]
   }, {
     "id" : 5,
     "username" : "Eeva",
     "password" : "aadam",
-    "email" : "eeva@hotmail.com"
+    "email" : "eeva@hotmail.com",
+    "contacts" : [ ]
+  }, {
+    "id" : 6,
+    "username" : "Tinkerbell",
+    "password" : "peeterpaan",
+    "email" : "tinkerbell@gmail.com",
+    "contacts" : [ 1 ]
+  } ],
+  "conversations" : [ {
+    "id" : 1,
+    "participants" : [ 1, 6 ],
+    "messages" : [ {
+      "id" : 1,
+      "sender" : 1,
+      "content" : "Tsau 1"
+    }, {
+      "id" : 2,
+      "sender" : 6,
+      "content" : "Tsau 2"
+    } ]
+  }, {
+    "id" : 2,
+    "participants" : [ 4, 5 ],
+    "messages" : [ {
+      "id" : 3,
+      "sender" : 4,
+      "content" : "Tsau 3"
+    }, {
+      "id" : 4,
+      "sender" : 5,
+      "content" : "Tsau 4"
+    }, {
+      "id" : 5,
+      "sender" : 5,
+      "content" : "Kuidas läheb?"
+    } ]
+  }, {
+    "id" : 3,
+    "participants" : [ 1, 4 ],
+    "messages" : [ {
+      "id" : 1,
+      "sender" : 1,
+      "content" : "Tsau Aadam"
+    }, {
+      "id" : 2,
+      "sender" : 4,
+      "content" : "Tsau Peeter"
+    }, {
+      "id" : 3,
+      "sender" : 1,
+      "content" : "Head aega Aadam"
+    } ]
+  }, {
+    "id" : 4,
+    "participants" : [ 1, 5 ],
+    "messages" : [ ]
   } ]
 }

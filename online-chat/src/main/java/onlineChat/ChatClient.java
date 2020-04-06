@@ -1,14 +1,20 @@
 package onlineChat;
 
-import components.request.LoginRequest;
-import components.request.RegisterRequest;
-import components.request.Request;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import components.chat.Conversation;
+import components.chat.User;
+import components.database.Database;
+import components.request.*;
 import javafx.application.Application;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.event.EventHandler;
 import javafx.geometry.HPos;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -17,8 +23,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * JavaFX App
@@ -27,7 +32,7 @@ public class ChatClient extends Application {
     private String ipAddress = "localhost";
     private int port = 1337;
 
-    private List<String> conversations = new ArrayList<>();
+    private User currentUser;
 
     private final int WINDOW_WIDTH = 800;
     private final int WINDOW_HEIGHT = 600;
@@ -40,36 +45,40 @@ public class ChatClient extends Application {
 
             System.out.println("connected to chat server");
 
-            switch (request.getRequestType()) {
-                case GETDATA:
-                    break;
-                case LOGIN:
-                    out.writeInt(1);
-                    out.writeUTF(((LoginRequest) request).getUsername());
-                    out.writeUTF(((LoginRequest) request).getPassword());
-                    break;
-                case REGISTER:
-                    out.writeInt(2);
-                    out.writeUTF(((RegisterRequest) request).getUsername());
-                    out.writeUTF(((RegisterRequest) request).getPassword());
-                    out.writeUTF(((RegisterRequest) request).getEmail());
-                    break;
-            }
+            var mapper = new ObjectMapper();
 
-            int requestStatus = in.readInt();
-            if (requestStatus == 0) {
+            out.writeUTF(mapper.writeValueAsString(request));
+
+            var response = mapper.readValue(in.readUTF(), Response.class);
+            if (response.getResponseType() == ResponseType.OK_NO_DATA) {
                 System.out.println("Request completed successfully");
-                System.out.println(in.readUTF());
+                System.out.println(response.getErrorMsg());
                 return true;
-            } else {
+            } else if (response.getResponseType() == ResponseType.OK_WITH_DATA) {
+                System.out.println("Request completed successfully");
+                System.out.println(response.getErrorMsg());
+
+                // TODO: Figure out a better way to send user data from server
+                if (request.getRequestType() == RequestType.GETDATA) {
+                    // Read current user data from socket
+                    Database currentUserData = mapper.readValue(in.readUTF(), Database.class);
+                    // Initialize current user
+                    currentUser = currentUserData.getUsers().get(0);
+                    currentUser.setConversations(currentUserData.getConversations());
+                }
+
+                return true;
+            } else if (response.getResponseType() == ResponseType.ERROR) {
                 System.out.println("There was an error while completing the request: ");
-                System.out.println(in.readUTF());
+                System.out.println(response.getErrorMsg());
                 return false;
             }
 
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
+        return false;
     }
 
     public Scene createLogInScene (Stage primaryStage) {
@@ -98,12 +107,20 @@ public class ChatClient extends Application {
             if (!usernameField.getText().equals("") && !pwdField.getText().equals("")) {
                 boolean reqStatus = sendRequest(new LoginRequest(usernameField.getText(), pwdField.getText()));
 
-                // If login was successful, go to next scene
-                if (reqStatus) {
-                    primaryStage.setScene(this.chatScene);
-                    usernameField.setText("");
-                    pwdField.setText("");
-                }
+                // If login was not successful, return
+                if (!reqStatus) return;
+
+                // Fetch user data and save it in currentUser
+                reqStatus = sendRequest(new GetDataRequest(usernameField.getText()));
+
+                // If data fetching was not successful, return
+                if (!reqStatus) return;
+
+                // If all server communication worked, create the chat scene and navigate to it
+                chatScene = createChatScene(primaryStage);
+                primaryStage.setScene(chatScene);
+                usernameField.setText("");
+                pwdField.setText("");
             }
         });
         // Go to register window when register link clicked
@@ -184,11 +201,6 @@ public class ChatClient extends Application {
     }
 
     public Scene createChatScene(Stage primaryStage) {
-        // Create dummy conersations
-        for (int i = 0; i < 40; i++) {
-            conversations.add("Conversation " + (i + 1));
-        }
-
         // All elements are stored in a gridpane
         var gridPane = new GridPane();
         // Gaps between grid elements
@@ -213,13 +225,40 @@ public class ChatClient extends Application {
         logOutButton.setOnAction(event -> primaryStage.setScene(this.logInScene));
 
         // List of available contacts
-        ListView<String> contactsList = new ListView<>();
-        contactsList.getItems().addAll(conversations);
-        contactsList.setMinWidth(150);
+        ObservableList<Conversation> conversationList = FXCollections.observableArrayList();
+        conversationList.addAll(currentUser.getConversations());
+        ListView<Conversation> conversationListView = new ListView<>(conversationList);
+        conversationListView.setMinWidth(150);
+        conversationListView.setCellFactory(param -> new ListCell<>() {
+            @Override
+            protected void updateItem(Conversation item, boolean empty) {
+                super.updateItem(item, empty);
+
+                if (empty || item == null || item.getParticipants() == null) {
+                    setText(null);
+                } else {
+                    setText(item.getParticipants().stream()
+                            .filter(user -> user.getId() != currentUser.getId())
+                            .map(User::getUsername)
+                            .collect(Collectors.joining(", ")));
+                }
+            }
+        });
 
         // Conversation area
         var messagesArea = new TextArea();
         messagesArea.setEditable(false);
+
+        // Show messages in convo when convo is selected from menu (conversation list view)
+        conversationListView.setOnMouseClicked(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent event) {
+                Conversation selectedConvo = conversationListView.getSelectionModel().getSelectedItem();
+                messagesArea.setText(selectedConvo.getMessages().stream()
+                        .map(message -> message.getSender().getUsername() + ": " + message.getContent())
+                        .collect(Collectors.joining("\n")));
+            }
+        });
 
         // New message input
         var inputField = new TextField();
@@ -235,7 +274,7 @@ public class ChatClient extends Application {
         gridPane.add(buttonBox, 0, 0);
         gridPane.add(logOutButton, 1, 0);
         gridPane.setHalignment(logOutButton, HPos.RIGHT);
-        gridPane.add(contactsList, 0, 1);
+        gridPane.add(conversationListView, 0, 1);
         gridPane.add(messagesArea, 1, 1);
         gridPane.add(inputBox, 1, 2);
 
@@ -288,7 +327,6 @@ public class ChatClient extends Application {
     @Override
     public void start(Stage primaryStage) {
         logInScene = createLogInScene(primaryStage);
-        chatScene = createChatScene(primaryStage);
         registerScene = createRegisterScene(primaryStage);
 
         primaryStage.setScene(logInScene);

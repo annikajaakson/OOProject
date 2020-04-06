@@ -1,13 +1,7 @@
 package components.request;
 
-public class Request {
-    private RequestType requestType;
+public interface Request {
 
-    public RequestType getRequestType() {
-        return requestType;
-    }
+    RequestType getRequestType();
 
-    public void setRequestType(RequestType requestType) {
-        this.requestType = requestType;
-    }
 }

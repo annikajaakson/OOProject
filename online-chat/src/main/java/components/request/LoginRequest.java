@@ -1,13 +1,22 @@
 package components.request;
 
-public class LoginRequest extends Request {
-    private final String username;
-    private final String password;
+public class LoginRequest implements Request {
+    private String username;
+    private String password;
+    private final RequestType requestType = RequestType.LOGIN;
+
+    public LoginRequest() {
+        super();
+    }
 
     public LoginRequest(String username, String password) {
-        super.setRequestType(RequestType.LOGIN);
         this.username = username;
         this.password = password;
+    }
+
+    @Override
+    public RequestType getRequestType() {
+        return requestType;
     }
 
     public String getUsername() {
