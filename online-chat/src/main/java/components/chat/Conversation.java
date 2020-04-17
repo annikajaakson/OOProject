@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
+import java.util.ArrayList;
 import java.util.List;
 
 // This is a magical annotation that can construct conversation from id stored in database
@@ -15,6 +16,14 @@ public class Conversation {
     @JsonSerialize(using = ContactsListSerializer.class)
     private List<User> participants;
     private List<Message> messages;
+
+    public Conversation() {}
+
+    public Conversation(Conversation copy) {
+        this.id = copy.id;
+        this.participants = new ArrayList<>(copy.getParticipants());
+        this.messages = new ArrayList<>(copy.getMessages());
+    }
 
     public int getId() {
         return id;

@@ -2,11 +2,13 @@ package onlineChat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import components.chat.Conversation;
+import components.chat.Message;
 import components.chat.User;
 import components.database.Database;
 import components.request.*;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.geometry.HPos;
@@ -23,6 +25,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 /**
@@ -33,15 +36,21 @@ public class ChatClient extends Application {
     private int port = 1337;
 
     private User currentUser;
+    private Socket userSocket;
+    private DataInputStream userIn;
+    private DataOutputStream userOut;
+
+    private Conversation activeConversation;
 
     private final int WINDOW_WIDTH = 800;
     private final int WINDOW_HEIGHT = 600;
     private Scene logInScene, registerScene, chatScene;
 
     public boolean sendRequest(Request request) {
-        try (Socket socket = new Socket(ipAddress, port);
-             DataInputStream in = new DataInputStream(socket.getInputStream());
-             DataOutputStream out = new DataOutputStream(socket.getOutputStream())) {
+        try {
+            Socket socket = new Socket(ipAddress, port);
+            DataInputStream in = new DataInputStream(socket.getInputStream());
+            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 
             System.out.println("connected to chat server");
 
@@ -53,6 +62,7 @@ public class ChatClient extends Application {
             if (response.getResponseType() == ResponseType.OK_NO_DATA) {
                 System.out.println("Request completed successfully");
                 System.out.println(response.getErrorMsg());
+                socket.close();
                 return true;
             } else if (response.getResponseType() == ResponseType.OK_WITH_DATA) {
                 System.out.println("Request completed successfully");
@@ -64,13 +74,24 @@ public class ChatClient extends Application {
                     Database currentUserData = mapper.readValue(in.readUTF(), Database.class);
                     // Initialize current user
                     currentUser = currentUserData.getUsers().get(0);
-                    currentUser.setConversations(currentUserData.getConversations());
+                    // Store conversations in an observable arraylist
+                    currentUser.setConversations(FXCollections.observableArrayList(currentUserData.getConversations()));
+
+                    // Start new thread for accepting incoming messages
+                    new Thread(new ClientThread(currentUser, socket, in, out)).start();
+                    // Save socket
+                    this.userSocket = socket;
+                    this.userIn = in;
+                    this.userOut = out;
+                    return true;
                 }
 
+                socket.close();
                 return true;
             } else if (response.getResponseType() == ResponseType.ERROR) {
                 System.out.println("There was an error while completing the request: ");
                 System.out.println(response.getErrorMsg());
+                socket.close();
                 return false;
             }
 
@@ -225,9 +246,7 @@ public class ChatClient extends Application {
         logOutButton.setOnAction(event -> primaryStage.setScene(this.logInScene));
 
         // List of available contacts
-        ObservableList<Conversation> conversationList = FXCollections.observableArrayList();
-        conversationList.addAll(currentUser.getConversations());
-        ListView<Conversation> conversationListView = new ListView<>(conversationList);
+        ListView<Conversation> conversationListView = new ListView<>((ObservableList<Conversation>) currentUser.getConversations());
         conversationListView.setMinWidth(150);
         conversationListView.setCellFactory(param -> new ListCell<>() {
             @Override
@@ -250,14 +269,24 @@ public class ChatClient extends Application {
         messagesArea.setEditable(false);
 
         // Show messages in convo when convo is selected from menu (conversation list view)
-        conversationListView.setOnMouseClicked(new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent event) {
-                Conversation selectedConvo = conversationListView.getSelectionModel().getSelectedItem();
-                messagesArea.setText(selectedConvo.getMessages().stream()
-                        .map(message -> message.getSender().getUsername() + ": " + message.getContent())
-                        .collect(Collectors.joining("\n")));
-            }
+        conversationListView.setOnMouseClicked(event -> {
+            activeConversation = conversationListView.getSelectionModel().getSelectedItem();
+            if (activeConversation == null) return;
+            messagesArea.setText(activeConversation.getMessages().stream()
+                    .map(Message::toString)
+                    .collect(Collectors.joining("\n")));
+        });
+
+        // Automatically refresh text area
+        ((ObservableList<Conversation>) currentUser.getConversations()).addListener((ListChangeListener<Conversation>) change -> {
+            activeConversation = currentUser.getConversations().stream()
+                    .filter(conversation -> conversation.getId() == activeConversation.getId())
+                    .findFirst()
+                    .orElse(null);
+            if (activeConversation == null) return;
+            messagesArea.setText(activeConversation.getMessages().stream()
+                    .map(Message::toString)
+                    .collect(Collectors.joining("\n")));
         });
 
         // New message input
@@ -265,6 +294,24 @@ public class ChatClient extends Application {
         inputField.setMinWidth(300);
         // Send message button
         var sendButton = new Button("Send");
+        // Send message request to server when send button is pressed
+        sendButton.setOnAction(actionEvent -> {
+            try  {
+                if (activeConversation == null) return;
+
+                var messageRequest = new ObjectMapper().writeValueAsString(new MessageRequest(
+                        inputField.getText(),
+                        currentUser.getId(),
+                        activeConversation.getId()
+                ));
+
+                userOut.writeUTF(messageRequest);
+                inputField.setText("");
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+        });
 
         // HBox for typing message and sed button
         var inputBox = new HBox();

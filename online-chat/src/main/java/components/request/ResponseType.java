@@ -3,7 +3,8 @@ package components.request;
 public enum ResponseType {
     OK_NO_DATA(0),
     OK_WITH_DATA(1),
-    ERROR(2);
+    NEW_MESSAGE(2),
+    ERROR(3);
 
     private final int responseID;
 

@@ -21,6 +21,17 @@ public class User {
     @JsonIgnore
     private List<Conversation> conversations = new ArrayList<>();
 
+    public User() {}
+
+    public User(User copy) {
+        this.id = copy.id;
+        this.username = copy.username;
+        this.password = copy.password;
+        this.email = copy.email;
+        this.contacts = copy.contacts;
+        this.conversations = copy.conversations;
+    }
+
     public int getId() {
         return id;
     }
