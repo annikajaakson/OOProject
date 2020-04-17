@@ -1,13 +1,11 @@
 package onlineChat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import components.chat.Conversation;
 import components.chat.Message;
 import components.chat.User;
 import components.database.Database;
-import components.request.LogoutRequest;
-import components.request.MessageRequest;
-import components.request.Response;
-import components.request.ResponseType;
+import components.request.*;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -15,7 +13,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class UserThread implements Runnable {
 
@@ -38,11 +38,11 @@ public class UserThread implements Runnable {
         this.DBPath = DBPath;
     }
 
-    public synchronized Database fetchDatabase () throws IOException {
+    public synchronized Database fetchDatabase() throws IOException {
         return mapper.readValue(new File(DBPath.toString()), Database.class);
     }
 
-    public synchronized void writeDatabase () throws IOException {
+    public synchronized void writeDatabase() throws IOException {
         mapper.writerWithDefaultPrettyPrinter().writeValue(new File(DBPath.toString()), database);
     }
 
@@ -77,6 +77,9 @@ public class UserThread implements Runnable {
                         break;
                     case MESSAGE:
                         var messageRequest = mapper.readValue(objectAsString, MessageRequest.class);
+
+                        System.out.println("Message request from user " + messageRequest.getSenderId());
+
                         // Find conversation that the message belongs to
                         var conversation = database.getConversationById(messageRequest.getConversationId());
 
@@ -100,10 +103,41 @@ public class UserThread implements Runnable {
                                                     new Response(ResponseType.NEW_MESSAGE, "Message incoming")
                                             )
                                     );
-                                    System.out.println("Convo id: " + conversation.getId());
-                                    System.out.println("User id: " + user.getId());
                                     clientOut.writeUTF(mapper.writeValueAsString(database.getConversationData(conversation)));
                                 }
+                            }
+                        }
+                        break;
+                    case CONVERSATION:
+                        var convoRequest = mapper.readValue(objectAsString, ConversationRequest.class);
+
+                        System.out.println("Conversation request received");
+
+                        // Create new conversation
+                        Conversation newConvo = new Conversation();
+                        newConvo.setId(database.nextConversationId());
+                        newConvo.setMessages(new ArrayList<>());
+                        // Add participants to conversation
+                        newConvo.setParticipants(convoRequest.getParticipantNames().stream()
+                                .map(name -> database.getUserByName(name))
+                                .collect(Collectors.toList()));
+
+                        // Add new conversation to database
+                        database.getConversations().add(newConvo);
+
+                        // Get subdatabase of all the necessary info for the conversation
+                        Database convoData = database.getConversationData(newConvo);
+
+                        // Broadcast new conversation to all participants
+                        for (User participant : newConvo.getParticipants()) {
+                            int userIndex = users.indexOf(participant);
+                            if (userIndex != -1) {
+                                DataOutputStream clientOut = new DataOutputStream(clients.get(userIndex).getOutputStream());
+                                // Send conversation data to socket
+                                clientOut.writeUTF(mapper.writeValueAsString(
+                                        new Response(ResponseType.NEW_CONVERSATION, "New conversation data on the way"))
+                                );
+                                clientOut.writeUTF(mapper.writeValueAsString(convoData));
                             }
                         }
                         break;

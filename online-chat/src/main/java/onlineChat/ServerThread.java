@@ -170,7 +170,6 @@ public class ServerThread implements Runnable {
                         throw new RuntimeException(e);
                     }
             }
-            // TODO: logout request
             // Close the socket manually
             if (request.getRequestType() != RequestType.GETDATA) this.socket.close();
         } catch (IOException e) {
