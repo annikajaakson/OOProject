@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import components.chat.Message;
 import components.chat.User;
 import components.database.Database;
+import components.request.LogoutRequest;
 import components.request.MessageRequest;
 import components.request.Response;
 import components.request.ResponseType;
@@ -46,13 +47,34 @@ public class UserThread implements Runnable {
     }
 
     public void run() {
-        while (true) {
+        boolean running = true;
+        while (running) {
             try {
                 String objectAsString = in.readUTF();
                 // Read the string as a general ClientRequest first
                 var request = mapper.readValue(objectAsString, ClientRequest.class);
 
                 switch (request.getRequestType()) {
+                    case LOGOUT:
+                        try {
+                            // Now that we know the request type, read string as the right type
+                            var logoutRequest = mapper.readValue(objectAsString, LogoutRequest.class);
+
+                            // Read who is trying to log out
+                            String username = logoutRequest.getUsername();
+                            System.out.println("Log out request with username " + username);
+
+                            // Remove client from sockets and users lists
+                            clients.remove(socket);
+                            users.removeIf(user -> user.getUsername().equals(username));
+
+                            // Close socket and thread
+                            socket.close();
+                            running = false;
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                        break;
                     case MESSAGE:
                         var messageRequest = mapper.readValue(objectAsString, MessageRequest.class);
                         // Find conversation that the message belongs to

@@ -3,8 +3,9 @@ package components.request;
 public enum RequestType {
     GETDATA(0),
     LOGIN(1),
-    REGISTER(2),
-    MESSAGE(3);
+    LOGOUT(2),
+    REGISTER(3),
+    MESSAGE(4);
 
     private final int requestID;
 

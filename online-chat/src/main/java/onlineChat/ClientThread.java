@@ -8,6 +8,7 @@ import components.request.Response;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
 
@@ -46,6 +47,8 @@ public class ClientThread implements Runnable {
                         break;
                 }
             }
+        } catch (EOFException e) {
+            System.out.println("Closing client connection");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

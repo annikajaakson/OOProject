@@ -243,7 +243,14 @@ public class ChatClient extends Application {
 
         // Log out button
         var logOutButton = new Button("Log out");
-        logOutButton.setOnAction(event -> primaryStage.setScene(this.logInScene));
+        logOutButton.setOnAction(event -> {
+            try {
+                userOut.writeUTF(new ObjectMapper().writeValueAsString(new LogoutRequest(currentUser.getUsername())));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            primaryStage.setScene(this.logInScene);
+        });
 
         // List of available contacts
         ListView<Conversation> conversationListView = new ListView<>((ObservableList<Conversation>) currentUser.getConversations());
