@@ -243,7 +243,14 @@ public class ChatClient extends Application {
 
         // Log out button
         var logOutButton = new Button("Log out");
-        logOutButton.setOnAction(event -> primaryStage.setScene(this.logInScene));
+        logOutButton.setOnAction(event -> {
+            try {
+                userOut.writeUTF(new ObjectMapper().writeValueAsString(new LogoutRequest(currentUser.getUsername())));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            primaryStage.setScene(this.logInScene);
+        });
 
         // List of available contacts
         ListView<Conversation> conversationListView = new ListView<>((ObservableList<Conversation>) currentUser.getConversations());
@@ -279,6 +286,8 @@ public class ChatClient extends Application {
 
         // Automatically refresh text area
         ((ObservableList<Conversation>) currentUser.getConversations()).addListener((ListChangeListener<Conversation>) change -> {
+            if (activeConversation == null) return; // If no conversation chosen, don't try to refresh
+
             activeConversation = currentUser.getConversations().stream()
                     .filter(conversation -> conversation.getId() == activeConversation.getId())
                     .findFirst()
@@ -296,9 +305,10 @@ public class ChatClient extends Application {
         var sendButton = new Button("Send");
         // Send message request to server when send button is pressed
         sendButton.setOnAction(actionEvent -> {
-            try  {
-                if (activeConversation == null) return;
+            // If no conversation selected, don't do anything
+            if (activeConversation == null) return;
 
+            try  {
                 var messageRequest = new ObjectMapper().writeValueAsString(new MessageRequest(
                         inputField.getText(),
                         currentUser.getId(),
@@ -306,11 +316,10 @@ public class ChatClient extends Application {
                 ));
 
                 userOut.writeUTF(messageRequest);
-                inputField.setText("");
+                inputField.setText(""); // Clear input field
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-
         });
 
         // HBox for typing message and sed button
@@ -353,12 +362,30 @@ public class ChatClient extends Application {
 
         // Add people to listview if add button is pressed
         addButton.setOnAction(event -> {
+            // Can only add people from your own contacts to the conversation
+            if (currentUser.getContacts().stream().noneMatch(user -> user.getUsername().equals(nameField.getText())))
+                return;
+
             convoPeople.getItems().add(nameField.getText());
             nameField.setText("");
         });
 
         // Close window when conversation created
-        createButton.setOnAction(event -> newConvoWindow.close());
+        createButton.setOnAction(event -> {
+            // If no people added to teh conversation, don't create it
+            if (convoPeople.getItems().size() == 0) return;
+
+            try  {
+                // Send request for creating new conversation to the server
+                var convoRequest = new ConversationRequest(convoPeople.getItems());
+                convoRequest.getParticipantNames().add(currentUser.getUsername());
+                userOut.writeUTF(new ObjectMapper().writeValueAsString(convoRequest));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            newConvoWindow.close();
+        });
 
         gridPane.add(infoLabel, 0, 0);
         gridPane.add(nameField, 0, 1);

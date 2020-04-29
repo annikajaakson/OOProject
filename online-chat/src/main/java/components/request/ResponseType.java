@@ -4,7 +4,8 @@ public enum ResponseType {
     OK_NO_DATA(0),
     OK_WITH_DATA(1),
     NEW_MESSAGE(2),
-    ERROR(3);
+    NEW_CONVERSATION(3),
+    ERROR(4);
 
     private final int responseID;
 

@@ -9,7 +9,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -22,7 +21,6 @@ public class Server {
         int port = 1337;
 
         // Threadsafe list implementation
-        // TODO: Remove client from list on logout
         List<Socket> clients = new CopyOnWriteArrayList<>();
         List<User> users = new CopyOnWriteArrayList<>();
 
