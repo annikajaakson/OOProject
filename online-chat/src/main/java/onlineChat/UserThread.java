@@ -15,18 +15,30 @@ import java.net.Socket;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.stream.Collectors;
+import javax.mail.*;
+import javax.mail.internet.*;
 
 public class UserThread implements Runnable {
 
+    // Communication with sockets
     private final Socket socket;
     private DataInputStream in;
     private DataOutputStream out;
+
+    // List of clients as user objects and their corresponding sockets
     private List<User> users;
     private List<Socket> clients;
+
+    // Database variables
     private Path DBPath;
     private Database database;
     private ObjectMapper mapper = new ObjectMapper();
+
+    // Email sending
+    private String username = "fakemessengeroop@gmail.com";
+    private String password = "Fak3M3ss3ng3r";
 
     public UserThread(Socket socket, DataInputStream in, DataOutputStream out, List<User> users, List<Socket> clients, Database database, Path DBPath) {
         this.socket = socket;
@@ -44,6 +56,47 @@ public class UserThread implements Runnable {
 
     public synchronized void writeDatabase() throws IOException {
         mapper.writerWithDefaultPrettyPrinter().writeValue(new File(DBPath.toString()), database);
+    }
+
+    public void sendEmail(String sender, String senderPwd, String[] recipients, String subject, String body) {
+        // If there are no people to send the email to
+        if (recipients.length == 0) return;
+
+        Properties props = System.getProperties();
+        String host = "smtp.gmail.com";
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.smtp.host", host);
+        props.put("mail.smtp.port", "587");
+        props.put("mail.smtp.user", sender);
+        props.put("mail.smtp.password", senderPwd);
+        props.put("mail.smtp.auth", "plain");
+
+        Session session = Session.getDefaultInstance(props);
+        MimeMessage message = new MimeMessage(session);
+
+        try {
+            // Set message origin (sender)
+            message.setFrom(new InternetAddress(sender));
+
+            // Add all recipients to the message
+            for (String recipient : recipients) {
+                message.addRecipient(javax.mail.Message.RecipientType.TO, new InternetAddress(recipient));
+            }
+
+            // Set message subject and body
+            message.setSubject(subject);
+            message.setText(body);
+
+            // Send the message
+            Transport transport = session.getTransport("smtp");
+            transport.connect(host, sender, senderPwd);
+            transport.sendMessage(message, message.getAllRecipients());
+            transport.close();
+
+            System.out.println("Email sent successfully!");
+        } catch (MessagingException e) {
+            System.out.println("ERROR: " + e.getMessage());
+        }
     }
 
     public void run() {
@@ -93,19 +146,41 @@ public class UserThread implements Runnable {
                             conversation.getMessages().add(message);
                             writeDatabase();
 
+                            // List of emails to send notification of new message to
+                            List<String> inactiveUserEmails = new ArrayList<>();
                             // Broadcast message to currently actve users
                             for (User user : conversation.getParticipants()) {
                                 int userIndex = users.indexOf(user);
-                                if (userIndex != -1) {
-                                    DataOutputStream clientOut = new DataOutputStream(clients.get(userIndex).getOutputStream());
-                                    clientOut.writeUTF(
-                                            mapper.writeValueAsString(
-                                                    new Response(ResponseType.NEW_MESSAGE, "Message incoming")
-                                            )
-                                    );
-                                    clientOut.writeUTF(mapper.writeValueAsString(database.getConversationData(conversation)));
+
+                                // If user is not currently connected
+                                if (userIndex == -1) {
+                                    inactiveUserEmails.add(user.getEmail());
+                                    System.out.println("Offline: " + user.getEmail());
+                                    continue;
                                 }
+
+                                // If user is currently connected
+                                DataOutputStream clientOut = new DataOutputStream(clients.get(userIndex).getOutputStream());
+                                clientOut.writeUTF(
+                                        mapper.writeValueAsString(
+                                                new Response(ResponseType.NEW_MESSAGE, "Message incoming")
+                                        )
+                                );
+                                clientOut.writeUTF(mapper.writeValueAsString(database.getConversationData(conversation)));
                             }
+
+                            String emailContent = "You have an unread message from "
+                                    + message.getSender().getUsername()
+                                    + ". Log in to Fake Messenger to read it.\n\n"
+                                    + "Best regards\nFake Messenger team\n";
+                            // Send emails to currently inactive users
+                            sendEmail(
+                                    this.username,
+                                    this.password,
+                                    inactiveUserEmails.toArray(new String[0]),
+                                    "New Message from " + message.getSender().getUsername(),
+                                    emailContent
+                            );
                         }
                         break;
                     case CONVERSATION:
@@ -128,18 +203,40 @@ public class UserThread implements Runnable {
                         // Get subdatabase of all the necessary info for the conversation
                         Database convoData = database.getConversationData(newConvo);
 
+                        // List of emails to send notification of new conversation to
+                        List<String> inactiveUserEmails = new ArrayList<>();
                         // Broadcast new conversation to all participants
                         for (User participant : newConvo.getParticipants()) {
                             int userIndex = users.indexOf(participant);
-                            if (userIndex != -1) {
-                                DataOutputStream clientOut = new DataOutputStream(clients.get(userIndex).getOutputStream());
-                                // Send conversation data to socket
-                                clientOut.writeUTF(mapper.writeValueAsString(
-                                        new Response(ResponseType.NEW_CONVERSATION, "New conversation data on the way"))
-                                );
-                                clientOut.writeUTF(mapper.writeValueAsString(convoData));
+
+                            // If user is not connected
+                            if (userIndex == -1) {
+                                inactiveUserEmails.add(participant.getEmail());
+                                System.out.println("Offline: " + participant.getEmail());
+                                continue;
                             }
+
+                            // If user is online
+                            DataOutputStream clientOut = new DataOutputStream(clients.get(userIndex).getOutputStream());
+                            // Send conversation data to socket
+                            clientOut.writeUTF(mapper.writeValueAsString(
+                                    new Response(ResponseType.NEW_CONVERSATION, "New conversation data on the way"))
+                            );
+                            clientOut.writeUTF(mapper.writeValueAsString(convoData));
                         }
+
+                        String emailContent = "You have been added to a conversation with "
+                                + newConvo.getParticipants().stream().map(User::getUsername).collect(Collectors.joining(", "))
+                                + ". Log in to Fake Messenger to see it.\n\n"
+                                + "Best regards\nFake Messenger team\n";
+                        // Send emails to currently inactive users
+                        sendEmail(
+                                this.username,
+                                this.password,
+                                inactiveUserEmails.toArray(new String[0]),
+                                "You have been added to a conversation",
+                                emailContent
+                        );
                         break;
                 }
             } catch (IOException e) {
