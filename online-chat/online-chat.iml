@@ -16,6 +16,10 @@
     <orderEntry type="library" name="Maven: org.openjfx:javafx-graphics:win:13" level="project" />
     <orderEntry type="library" name="Maven: org.openjfx:javafx-base:13" level="project" />
     <orderEntry type="library" name="Maven: org.openjfx:javafx-base:win:13" level="project" />
+    <orderEntry type="library" name="Maven: javax.mail:mail:1.5.0-b01" level="project" />
+    <orderEntry type="library" name="Maven: javax.activation:activation:1.1" level="project" />
+    <orderEntry type="library" name="Maven: de.mkammerer:argon2-jvm:2.7" level="project" />
+    <orderEntry type="library" name="Maven: net.java.dev.jna:jna:5.5.0" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.10.3" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.10.3" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.10.3" level="project" />

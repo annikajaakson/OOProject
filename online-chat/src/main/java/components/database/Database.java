@@ -60,19 +60,63 @@ public class Database {
                 .orElse(null);
     }
 
-    // TODO: better ID generation!
     public int nextUserId() {
-        return users.size() + 1;
+        int maxId = users.stream().mapToInt(User::getId).max().orElse(0);
+
+        if (maxId == users.size()) {
+            return users.size() + 1;
+        }
+
+        for (int possibleId = 1; possibleId < maxId; possibleId++) {
+            // Temp variable because lambda only allows effectively final variables
+            int finalPossibleId = possibleId;
+            if (users.stream().mapToInt(User::getId).noneMatch(id -> id == finalPossibleId)) {
+                return possibleId;
+            }
+        }
+
+        // Should never reach
+        return 0;
     }
 
-    // TODO: better ID generation!
     public int nextConversationId() {
-        return conversations.size() + 1;
+        int maxId = conversations.stream().mapToInt(Conversation::getId).max().orElse(0);
+
+        if (maxId == conversations.size()) {
+            return conversations.size() + 1;
+        }
+
+        for (int possibleId = 1; possibleId < maxId; possibleId++) {
+            // Temp variable because lambda only allows effectively final variables
+            int finalPossibleId = possibleId;
+            if (conversations.stream().mapToInt(Conversation::getId).noneMatch(id -> id == finalPossibleId)) {
+                return possibleId;
+            }
+        }
+
+        // Should never reach
+        return 0;
     }
 
-    // TODO: better ID generation!
     public int nextMessageId(int convoId) {
-        return getConversationById(convoId).getMessages().size() + 1;
+        List<Message> convoMessages = getConversationById(convoId).getMessages();
+
+        int maxId = convoMessages.stream().mapToInt(Message::getId).max().orElse(0);
+
+        if (maxId == convoMessages.size()) {
+            return convoMessages.size() + 1;
+        }
+
+        for (int possibleId = 1; possibleId < maxId; possibleId++) {
+            // Temp variable because lambda only allows effectively final variables
+            int finalPossibleId = possibleId;
+            if (convoMessages.stream().mapToInt(Message::getId).noneMatch(id -> id == finalPossibleId)) {
+                return possibleId;
+            }
+        }
+
+        // Should never reach
+        return 0;
     }
 
     // Get subdatabase for information displayed to one user

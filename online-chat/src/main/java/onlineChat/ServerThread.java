@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import components.chat.User;
 import components.database.Database;
 import components.request.*;
+import de.mkammerer.argon2.*;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -23,6 +24,7 @@ public class ServerThread implements Runnable {
     private Path DBPath;
     private Database database;
     private ObjectMapper mapper = new ObjectMapper();
+    private final Argon2 argon2 = Argon2Factory.create();
 
     public ServerThread(Socket socket, DataInputStream in, DataOutputStream out, List<User> users, List<Socket> clients, Database database, Path DBPath) {
         this.socket = socket;
@@ -102,7 +104,7 @@ public class ServerThread implements Runnable {
                                 connectedUser = user;
 
                                 // If password is correct
-                                if (password.equals(user.getPassword())) {
+                                if (argon2.verify(connectedUser.getPassword(), password.toCharArray())) {
                                     // Send response to client
                                     out.writeUTF(mapper.writeValueAsString(new Response(ResponseType.OK_NO_DATA, "Login completed successfully")));
                                 } else {
@@ -148,7 +150,7 @@ public class ServerThread implements Runnable {
                             User newUser = new User();
                             newUser.setId(database.nextUserId());
                             newUser.setUsername(username);
-                            newUser.setPassword(registerRequest.getPassword());
+                            newUser.setPassword(argon2.hash(30, 65536, 1, registerRequest.getPassword().toCharArray()));
                             newUser.setEmail(registerRequest.getEmail());
 
                             // Add user to database
