@@ -130,13 +130,23 @@ public class ChatClient extends Application {
                 boolean reqStatus = sendRequest(new LoginRequest(usernameField.getText(), pwdField.getText()));
 
                 // If login was not successful, return
-                if (!reqStatus) return;
+                if (!reqStatus) {
+                    Alert loginError = new Alert(Alert.AlertType.ERROR);
+                    loginError.setContentText("Login was not successful. Please check username and password.");
+                    loginError.show();
+                    return;
+                }
 
                 // Fetch user data and save it in currentUser
                 reqStatus = sendRequest(new GetDataRequest(usernameField.getText()));
 
                 // If data fetching was not successful, return
-                if (!reqStatus) return;
+                if (!reqStatus) {
+                    Alert fetchError = new Alert(Alert.AlertType.ERROR);
+                    fetchError.setContentText("Could not receive user data. Please try again in a few minutes.");
+                    fetchError.show();
+                    return;
+                }
 
                 // If all server communication worked, create the chat scene and navigate to it
                 chatScene = createChatScene(primaryStage);
@@ -189,21 +199,48 @@ public class ChatClient extends Application {
 
         // Go to log in screen on register button press
         regButton.setOnAction(event -> {
-            if (!usernameField.getText().equals("")
-                    && !pwdField.getText().equals("")
-                    && pwdField.getText().equals(repPwdField.getText())
-                    && !emailField.getText().equals("")) {
-                boolean reqStatus = sendRequest(new RegisterRequest(usernameField.getText(), pwdField.getText(), emailField.getText()));
-
-                // If register request was successful
-                if (reqStatus) {
-                    primaryStage.setScene(this.logInScene);
-                    usernameField.setText("");
-                    pwdField.setText("");
-                    repPwdField.setText("");
-                    emailField.setText("");
-                }
+            if (usernameField.getText().equals("")) {
+                Alert noUsername = new Alert(Alert.AlertType.ERROR);
+                noUsername.setContentText("Please choose an username for registering");
+                noUsername.show();
+                return;
             }
+
+            if (pwdField.getText().equals("")) {
+                Alert noPwd = new Alert(Alert.AlertType.ERROR);
+                noPwd.setContentText("Please choose a password for registering");
+                noPwd.show();
+                return;
+            }
+
+            if (!pwdField.getText().equals(repPwdField.getText())) {
+                Alert pwdMismatch = new Alert(Alert.AlertType.ERROR);
+                pwdMismatch.setContentText("Repeated password does not match the original password");
+                pwdMismatch.show();
+                return;
+            }
+
+            if (emailField.getText().equals("")) {
+                Alert noEmail = new Alert(Alert.AlertType.ERROR);
+                noEmail.setContentText("Please choose an email for registering");
+                noEmail.show();
+                return;
+            }
+
+            boolean reqStatus = sendRequest(new RegisterRequest(usernameField.getText(), pwdField.getText(), emailField.getText()));
+            if (!reqStatus) {
+                Alert registerError = new Alert(Alert.AlertType.ERROR);
+                registerError.setContentText("There was a problem with registering. Please try again in a few minutes.");
+                registerError.show();
+                return;
+            }
+
+            // If register request was successful
+            primaryStage.setScene(this.logInScene);
+            usernameField.setText("");
+            pwdField.setText("");
+            repPwdField.setText("");
+            emailField.setText("");
         });
 
         container.getChildren().addAll(
@@ -385,8 +422,12 @@ public class ChatClient extends Application {
         // Add people to listview if add button is pressed
         addButton.setOnAction(event -> {
             // Can only add people from your own contacts to the conversation
-            if (currentUser.getContacts().stream().noneMatch(user -> user.getUsername().equals(nameField.getText())))
+            if (currentUser.getContacts().stream().noneMatch(user -> user.getUsername().equals(nameField.getText()))) {
+                Alert noSuchPerson = new Alert(Alert.AlertType.ERROR);
+                noSuchPerson.setContentText("There is no such user in your contacts list");
+                noSuchPerson.show();
                 return;
+            }
 
             convoPeople.getItems().add(nameField.getText());
             nameField.setText("");
@@ -394,8 +435,13 @@ public class ChatClient extends Application {
 
         // Close window when conversation created
         createButton.setOnAction(event -> {
-            // If no people added to teh conversation, don't create it
-            if (convoPeople.getItems().size() == 0) return;
+            // If no people added to the conversation, don't create it
+            if (convoPeople.getItems().size() == 0) {
+                Alert noPeoplePicked = new Alert(Alert.AlertType.ERROR);
+                noPeoplePicked.setContentText("Please choose at least one person to create the conversation with");
+                noPeoplePicked.show();
+                return;
+            }
 
             try  {
                 // Send request for creating new conversation to the server
@@ -470,7 +516,12 @@ public class ChatClient extends Application {
                     .findFirst()
                     .orElse(null);
 
-            if (forwardTo == null) return;
+            if (forwardTo == null) {
+                Alert noSuchConvo = new Alert(Alert.AlertType.ERROR);
+                noSuchConvo.setContentText("This conversation does not exist. Please pick an existing conversation");
+                noSuchConvo.show();
+                return;
+            }
 
             forwardConvos.getItems().add(forwardTo);
             nameField.setText("");
@@ -479,7 +530,12 @@ public class ChatClient extends Application {
         // Close window when message forwarded
         forwardButton.setOnAction(event -> {
             // If no conversations added to forward list, don't forward anything
-            if (forwardConvos.getItems().size() == 0) return;
+            if (forwardConvos.getItems().size() == 0) {
+                Alert noConvoPicked = new Alert(Alert.AlertType.ERROR);
+                noConvoPicked.setContentText("Please choose at least one conversation to forward the message to");
+                noConvoPicked.show();
+                return;
+            }
 
             try  {
                 // Send request for forwarding a message
