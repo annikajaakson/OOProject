@@ -6,7 +6,8 @@ public enum RequestType {
     LOGOUT(2),
     REGISTER(3),
     MESSAGE(4),
-    CONVERSATION(5);
+    CONVERSATION(5),
+    FORWARD(6);
 
     private final int requestID;
 

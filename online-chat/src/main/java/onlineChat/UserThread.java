@@ -238,6 +238,64 @@ public class UserThread implements Runnable {
                                 emailContent
                         );
                         break;
+                    case FORWARD:
+                        var forwardRequest = mapper.readValue(objectAsString, ForwardRequest.class);
+
+                        System.out.println("Forward request received");
+
+                        for (int conversationId : forwardRequest.getConversationIds()) {
+                            // Find conversation that the message is forwarded to
+                            var forwardConversation = database.getConversationById(conversationId);
+
+                            if (forwardConversation != null) {
+                                Message message = new Message();
+                                message.setId(database.nextMessageId(conversationId));
+                                message.setSender(database.getUserById(forwardRequest.getSenderId()));
+                                message.setContent(forwardRequest.getMessageContent());
+
+                                // Add message to database
+                                forwardConversation.getMessages().add(message);
+
+                                // List of emails to send notification of forwarded message to
+                                List<String> forwardEmails = new ArrayList<>();
+                                // Broadcast forwarded message to currently actve users
+                                for (User user : forwardConversation.getParticipants()) {
+                                    int userIndex = users.indexOf(user);
+
+                                    // If user is not currently connected
+                                    if (userIndex == -1) {
+                                        forwardEmails.add(user.getEmail());
+                                        System.out.println("Offline: " + user.getEmail());
+                                        continue;
+                                    }
+
+                                    // If user is currently connected
+                                    DataOutputStream clientOut = new DataOutputStream(clients.get(userIndex).getOutputStream());
+                                    clientOut.writeUTF(
+                                            mapper.writeValueAsString(
+                                                    new Response(ResponseType.NEW_MESSAGE, "Forwarded message incoming")
+                                            )
+                                    );
+                                    clientOut.writeUTF(mapper.writeValueAsString(database.getConversationData(forwardConversation)));
+                                }
+
+                                String email = "You have a forwarded message from "
+                                        + message.getSender().getUsername()
+                                        + ". Log in to Fake Messenger to read it.\n\n"
+                                        + "Best regards\nFake Messenger team\n";
+                                // Send emails to currently inactive users
+                                sendEmail(
+                                        this.username,
+                                        this.password,
+                                        forwardEmails.toArray(new String[0]),
+                                        "Forwarded Message from " + message.getSender().getUsername(),
+                                        email
+                                );
+                            }
+                        }
+                        // Sync database file
+                        writeDatabase();
+                        break;
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e);
