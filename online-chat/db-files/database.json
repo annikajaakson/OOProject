@@ -2,37 +2,37 @@
   "users" : [ {
     "id" : 1,
     "username" : "Peeter Paan",
-    "password" : "tinkerbell",
+    "password" : "$argon2i$v=19$m=65536,t=30,p=1$Qi6pkfp69ZVOCNtFfsQXcQ$fo7/CutkbZicl83GpB7dbVtHzJ7piZcq2PVQw/8028g",
     "email" : "pets@hotmail.com",
     "contacts" : [ 2, 6 ]
   }, {
     "id" : 2,
     "username" : "Tinky Winky",
-    "password" : "tipsy",
+    "password" : "$argon2i$v=19$m=65536,t=30,p=1$IayPRh0SdIpwn3mF9N57OQ$Di76zIlzpbHLY/31l57Oyop7Uh8Aiu58PdGpJnJ3XwU",
     "email" : "winky@gmail.com",
-    "contacts" : [ ]
+    "contacts" : [ 1 ]
   }, {
     "id" : 3,
     "username" : "La La",
-    "password" : "sefiir",
+    "password" : "$argon2i$v=19$m=65536,t=30,p=1$JRW/vhchMfxerIyGLDOIZw$AfAqvLjGpmiTUnjZT3/ZbGU7Yw3FzrWgbM/2YNG3YT0",
     "email" : "iimeil@gmail.com",
     "contacts" : [ ]
   }, {
     "id" : 4,
     "username" : "Aadam",
-    "password" : "eeva",
+    "password" : "$argon2i$v=19$m=65536,t=30,p=1$F2hHD22ooo84SSOv56iVhQ$ikYy39rCVTsuCDu1sU+xZb0yLbgN4A1/BOc5FL7MEgg",
     "email" : "aadam@gmail.com",
     "contacts" : [ ]
   }, {
     "id" : 5,
     "username" : "Eeva",
-    "password" : "aadam",
+    "password" : "$argon2i$v=19$m=65536,t=30,p=1$+jlePK78Ta6QXH/zCBKxvw$giQL1r8fNUbQ/7ZfWhnMaUqfURYM5h3nSIpu/CH5izI",
     "email" : "eeva@hotmail.com",
     "contacts" : [ ]
   }, {
     "id" : 6,
     "username" : "Tinkerbell",
-    "password" : "peeterpaan",
+    "password" : "$argon2i$v=19$m=65536,t=30,p=1$jE2kUcfYCaHV9aagt2PzEQ$U5ZomJm94EbLjBjPZlBoxEpCKP7iwUt6LKd1iV6H2gk",
     "email" : "tinkerbell@gmail.com",
     "contacts" : [ 1 ]
   } ],
@@ -47,6 +47,174 @@
       "id" : 2,
       "sender" : 6,
       "content" : "Tsau 2"
+    }, {
+      "id" : 3,
+      "sender" : 1,
+      "content" : "See on testimiseks"
+    }, {
+      "id" : 4,
+      "sender" : 1,
+      "content" : "spamm"
+    }, {
+      "id" : 5,
+      "sender" : 1,
+      "content" : "sp"
+    }, {
+      "id" : 6,
+      "sender" : 1,
+      "content" : "am"
+    }, {
+      "id" : 7,
+      "sender" : 1,
+      "content" : "ff"
+    }, {
+      "id" : 8,
+      "sender" : 1,
+      "content" : "dd"
+    }, {
+      "id" : 9,
+      "sender" : 1,
+      "content" : "ss"
+    }, {
+      "id" : 10,
+      "sender" : 1,
+      "content" : "ss"
+    }, {
+      "id" : 11,
+      "sender" : 1,
+      "content" : "ss"
+    }, {
+      "id" : 12,
+      "sender" : 1,
+      "content" : "ss"
+    }, {
+      "id" : 13,
+      "sender" : 6,
+      "content" : "aaa"
+    }, {
+      "id" : 14,
+      "sender" : 6,
+      "content" : "aa"
+    }, {
+      "id" : 15,
+      "sender" : 6,
+      "content" : "aa"
+    }, {
+      "id" : 16,
+      "sender" : 6,
+      "content" : "ss"
+    }, {
+      "id" : 17,
+      "sender" : 6,
+      "content" : "cc"
+    }, {
+      "id" : 18,
+      "sender" : 6,
+      "content" : "ee"
+    }, {
+      "id" : 19,
+      "sender" : 6,
+      "content" : "ff"
+    }, {
+      "id" : 20,
+      "sender" : 6,
+      "content" : "dd"
+    }, {
+      "id" : 21,
+      "sender" : 6,
+      "content" : "d"
+    }, {
+      "id" : 22,
+      "sender" : 6,
+      "content" : "d"
+    }, {
+      "id" : 23,
+      "sender" : 6,
+      "content" : "d"
+    }, {
+      "id" : 24,
+      "sender" : 6,
+      "content" : "d"
+    }, {
+      "id" : 25,
+      "sender" : 6,
+      "content" : "d"
+    }, {
+      "id" : 26,
+      "sender" : 6,
+      "content" : "e"
+    }, {
+      "id" : 27,
+      "sender" : 6,
+      "content" : "f"
+    }, {
+      "id" : 28,
+      "sender" : 6,
+      "content" : "f"
+    }, {
+      "id" : 29,
+      "sender" : 6,
+      "content" : "dd"
+    }, {
+      "id" : 30,
+      "sender" : 6,
+      "content" : "f"
+    }, {
+      "id" : 31,
+      "sender" : 6,
+      "content" : "sddsdsdsdsd"
+    }, {
+      "id" : 32,
+      "sender" : 6,
+      "content" : "f"
+    }, {
+      "id" : 33,
+      "sender" : 6,
+      "content" : "tytyty"
+    }, {
+      "id" : 34,
+      "sender" : 6,
+      "content" : "jou"
+    }, {
+      "id" : 35,
+      "sender" : 6,
+      "content" : "huuu"
+    }, {
+      "id" : 36,
+      "sender" : 6,
+      "content" : "gggg"
+    }, {
+      "id" : 37,
+      "sender" : 6,
+      "content" : "gh"
+    }, {
+      "id" : 38,
+      "sender" : 6,
+      "content" : "fty"
+    }, {
+      "id" : 39,
+      "sender" : 6,
+      "content" : "gh"
+    }, {
+      "id" : 40,
+      "sender" : 6,
+      "content" : "tytytyt"
+    }, {
+      "id" : 41,
+      "sender" : 6,
+      "content" : "dfdfdf"
+    }, {
+      "id" : 42,
+      "sender" : 6,
+      "content" : "fgfg"
+    }, {
+      "id" : 43,
+      "sender" : 1,
+      "content" : "jouuuuu"
+    }, {
+      "id" : 44,
+      "sender" : 1,
+      "content" : "Forwarded at 2020-05-10: Tsau Peeter"
     } ]
   }, {
     "id" : 2,
@@ -79,10 +247,30 @@
       "id" : 3,
       "sender" : 1,
       "content" : "Head aega Aadam"
+    }, {
+      "id" : 4,
+      "sender" : 1,
+      "content" : "Forwarded at 2020-05-10: Tsau Peeter"
     } ]
   }, {
     "id" : 4,
     "participants" : [ 1, 5 ],
-    "messages" : [ ]
+    "messages" : [ {
+      "id" : 1,
+      "sender" : 1,
+      "content" : "Forwarded at 2020-05-10: Tsau Peeter"
+    } ]
+  }, {
+    "id" : 5,
+    "participants" : [ 2, 6, 1 ],
+    "messages" : [ {
+      "id" : 1,
+      "sender" : 1,
+      "content" : "See on esimene sõnum"
+    }, {
+      "id" : 2,
+      "sender" : 1,
+      "content" : "Forwarded at 2020-05-10: Head aega Aadam"
+    } ]
   } ]
 }

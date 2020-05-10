@@ -25,6 +25,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
@@ -275,6 +276,23 @@ public class ChatClient extends Application {
         var messagesArea = new TextArea();
         messagesArea.setEditable(false);
 
+        // Create conversation area right-click menu
+        ContextMenu rightClickMenu = new ContextMenu();
+        MenuItem copy = new MenuItem("Copy");
+        MenuItem forward = new MenuItem("Forward");
+        forward.setOnAction(actionEvent -> showForwardPopup(messagesArea.getSelectedText()));
+
+        rightClickMenu.getItems().addAll(copy, forward);
+        messagesArea.setContextMenu(rightClickMenu);
+
+        messagesArea.setOnContextMenuRequested(contextMenuEvent -> {
+            if (messagesArea.getSelectedText().equals("") || activeConversation == null) {
+                messagesArea.getContextMenu().getItems().forEach(menuItem -> menuItem.setDisable(true));
+                return;
+            }
+            messagesArea.getContextMenu().getItems().forEach(menuItem -> menuItem.setDisable(false));
+        });
+
         // Show messages in convo when convo is selected from menu (conversation list view)
         conversationListView.setOnMouseClicked(event -> {
             activeConversation = conversationListView.getSelectionModel().getSelectedItem();
@@ -282,6 +300,8 @@ public class ChatClient extends Application {
             messagesArea.setText(activeConversation.getMessages().stream()
                     .map(Message::toString)
                     .collect(Collectors.joining("\n")));
+
+            // TODO: Set scrollbar to bottom
         });
 
         // Automatically refresh text area
@@ -293,9 +313,11 @@ public class ChatClient extends Application {
                     .findFirst()
                     .orElse(null);
             if (activeConversation == null) return;
+
             messagesArea.setText(activeConversation.getMessages().stream()
                     .map(Message::toString)
                     .collect(Collectors.joining("\n")));
+            messagesArea.setScrollTop(messagesArea.getMaxHeight());
         });
 
         // New message input
@@ -396,6 +418,93 @@ public class ChatClient extends Application {
         // Show window
         newConvoWindow.setScene(new Scene(gridPane, 400, 300));
         newConvoWindow.show();
+    }
+
+    public void showForwardPopup(String forwardMessage) {
+        // Create new window
+        var forwardWindow = new Stage();
+        forwardWindow.initModality(Modality.APPLICATION_MODAL);
+        forwardWindow.setTitle("Forward message");
+
+        // All elements are stored in a gridpane
+        var gridPane = new GridPane();
+        // Gaps between grid elements
+        gridPane.setVgap(10);
+        gridPane.setHgap(10);
+        // Position grid at the center of the window
+        gridPane.setAlignment(Pos.CENTER);
+
+        // Forwarding window contents
+        var infoLabel = new Label("Enter conversations to forward the message to");
+        var nameField = new TextField();
+        var addButton = new Button("Add");
+
+        // Conversations already added to forwarding list
+        ListView<Conversation> forwardConvos = new ListView<>();
+        forwardConvos.setPrefHeight(150);
+        forwardConvos.setCellFactory(param -> new ListCell<>() {
+            @Override
+            protected void updateItem(Conversation item, boolean empty) {
+                super.updateItem(item, empty);
+
+                if (empty || item == null || item.getParticipants() == null) {
+                    setText(null);
+                } else {
+                    setText(item.getParticipants().stream()
+                            .filter(user -> user.getId() != currentUser.getId())
+                            .map(User::getUsername)
+                            .collect(Collectors.joining(", ")));
+                }
+            }
+        });
+        var forwardButton = new Button("Forward");
+
+        // Add conversations to forward to if add button is pressed
+        addButton.setOnAction(event -> {
+            Conversation forwardTo = currentUser.getConversations().stream()
+                    .filter(conversation -> conversation.getParticipants().stream()
+                            .filter(user -> !user.getUsername().equals(currentUser.getUsername()))
+                            .map(User::getUsername)
+                            .collect(Collectors.joining(", "))
+                            .equals(nameField.getText()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (forwardTo == null) return;
+
+            forwardConvos.getItems().add(forwardTo);
+            nameField.setText("");
+        });
+
+        // Close window when message forwarded
+        forwardButton.setOnAction(event -> {
+            // If no conversations added to forward list, don't forward anything
+            if (forwardConvos.getItems().size() == 0) return;
+
+            try  {
+                // Send request for forwarding a message
+                var forwardRequest = new ForwardRequest(
+                        "Forwarded at " + LocalDate.now() + ": " + forwardMessage,
+                        currentUser.getId(),
+                        forwardConvos.getItems().stream().map(Conversation::getId).collect(Collectors.toList())
+                );
+                userOut.writeUTF(new ObjectMapper().writeValueAsString(forwardRequest));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            forwardWindow.close();
+        });
+
+        gridPane.add(infoLabel, 0, 0);
+        gridPane.add(nameField, 0, 1);
+        gridPane.add(addButton, 1, 1);
+        gridPane.add(forwardConvos, 0, 2);
+        gridPane.add(forwardButton, 0, 3);
+
+        // Show window
+        forwardWindow.setScene(new Scene(gridPane, 400, 300));
+        forwardWindow.show();
     }
 
     @Override
